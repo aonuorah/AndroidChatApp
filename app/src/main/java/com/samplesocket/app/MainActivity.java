@@ -1,7 +1,6 @@
 package com.samplesocket.app;
 
 import android.app.Activity;
-import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -58,14 +57,14 @@ public class MainActivity extends Activity {
             try {
                 startListener();
             }catch(IOException ex){
-                Log.d("ServerListnerException: ", ex.getMessage());
+                Log.d("ServerListenerException: ", ex.getMessage());
             }
             return null;
         }
 
         @Override
         protected void onProgressUpdate(String... progress){
-            textView.setText(((String[])progress)[0]);
+            textView.setText((progress)[0]);
             super.onProgressUpdate(progress);
         }
 
@@ -90,7 +89,7 @@ public class MainActivity extends Activity {
                     }
                 }
             }catch(Exception ex){
-                Log.d("SocketExeption: ", ex.getMessage());
+                Log.d("SocketException: ", ex.getMessage());
             }finally{
                 listener.close();
             }
