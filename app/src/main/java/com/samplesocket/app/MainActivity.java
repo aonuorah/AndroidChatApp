@@ -1,30 +1,41 @@
 package com.samplesocket.app;
 
-import android.app.Activity;
-import android.os.AsyncTask;
+import android.content.Context;
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ListView;
 
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.ServerSocket;
-import java.net.Socket;
+import com.samplesocket.adapters.UserListAdapter;
+import com.samplesocket.classes.App;
+import com.samplesocket.classes.AsyncActivity;
 
-
-public class MainActivity extends Activity {
-    private TextView textView;
+public class MainActivity extends AsyncActivity {
+    private UserListAdapter onlineUsersAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        textView = (TextView)findViewById(R.id.receivedText);
-        SocketListener s = new SocketListener();
-        s.execute();
+        App.GetGlobalApp().GetSocketListener(this);
 
+        onlineUsersAdapter = new UserListAdapter(this.getLayoutInflater(), App.GetGlobalApp().getOnlineUsers());
+        final Context context = this;
+
+        ListView onlineUsersList = (ListView)findViewById(R.id.onlineUsers);
+        onlineUsersList.setAdapter(onlineUsersAdapter);
+        onlineUsersList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position,long id) {
+
+                Intent intent = new Intent(context, MessageActivity.class);
+                intent.putExtra("user_id", App.GetGlobalApp().getOnlineUsers().get(position).getName());
+                startActivity(intent);
+            }
+        });
     }
 
 
@@ -49,52 +60,9 @@ public class MainActivity extends Activity {
         return super.onOptionsItemSelected(item);
     }
 
-
-    public class SocketListener extends AsyncTask<String, String, Void> {
-
-        @Override
-        protected Void doInBackground(String... params) {
-            try {
-                startListener();
-            }catch(IOException ex){
-                Log.d("ServerListenerException: ", ex.getMessage());
-            }
-            return null;
-        }
-
-        @Override
-        protected void onProgressUpdate(String... progress){
-            textView.setText((progress)[0]);
-            super.onProgressUpdate(progress);
-        }
-
-        private void startListener() throws IOException {
-            ServerSocket listener = new ServerSocket(9000);
-            try{
-                while(true) {
-                    char[] c = new char[512];
-                    Socket socket = listener.accept();
-                    try {
-                        InputStreamReader reader = new InputStreamReader(socket.getInputStream());
-                        int readChar = reader.read();
-                        int count = 0;
-                        while (readChar != -1) {
-                            c[count++] = (char) readChar;
-                            readChar = reader.read();
-                        }
-                        String s = new String(c);
-                        publishProgress(s);
-                    }finally{
-                        socket.close();
-                    }
-                }
-            }catch(Exception ex){
-                Log.d("SocketException: ", ex.getMessage());
-            }finally{
-                listener.close();
-            }
-        }
+    @Override
+    public void progressUpdate(String... progress) {
+        App.GetGlobalApp().update(progress[0]);
+        onlineUsersAdapter.notifyDataSetChanged();
     }
-
-
 }
