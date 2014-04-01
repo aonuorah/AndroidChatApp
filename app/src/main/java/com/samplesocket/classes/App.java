@@ -89,20 +89,25 @@ public class App {
         try {
             JSONObject response = new JSONObject(socketResponse);
             String response_code = response.getString("code");
-            if(response_code.equals("904")){
-                this.addOnlineUser(new User(response.getString("id")));
-            }else if(response_code.equals("905")){
-                this.removeOnlineUser(response.getString("id"));
-            }else if(response_code.equals("902")){
+
+            if(response_code.equals("902")){
                 String _from = response.getString("from");
                 String _stamp = response.getString("stamp");
                 String _mes = response.getString("message");
                 Message _message = new Message(_from, getConnectionName(), _mes, _stamp);
                 this.addMessage(_from, _message);
+
             }else if(response_code.equals("903")){
                 int _id = Integer.valueOf(response.getString("id"));
                 String _to = response.getString("to");
                 this.getMessages(_to).get(_id).setDelivered();
+
+            }else if(response_code.equals("904")){
+                this.addOnlineUser(new User(response.getString("id")));
+
+            }else if(response_code.equals("905")){
+                this.removeOnlineUser(response.getString("id"));
+
             }
         }catch(JSONException ex){
             System.out.println(ex.getMessage());

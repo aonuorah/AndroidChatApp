@@ -18,8 +18,9 @@ public class SocketListener {
     private AsyncReadSocket asyncSocket;
     private Socket socket;
 
-    String server_ip = "192.168.0.6";
-    int port = 9090;
+    //private static final String server_ip = "192.168.0.6";
+    private static final String server_ip = "86.11.223.177";
+    private static final int port = 9090;
 
     public SocketListener(){
        initAsyncSocket();

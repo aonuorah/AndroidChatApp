@@ -22,6 +22,7 @@ import java.util.Calendar;
 
 public class MessageActivity extends AsyncActivity {
     private String to;
+    private ListView messageList;
     private MessageListAdapter messageListAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,7 +31,7 @@ public class MessageActivity extends AsyncActivity {
         Intent intent = getIntent();
         to = intent.getStringExtra("user_id");
 
-        ListView messageList = (ListView)findViewById(R.id.messageList);
+        messageList = (ListView)findViewById(R.id.messageList);
         messageListAdapter = new MessageListAdapter(this.getLayoutInflater(), App.GetGlobalApp().getMessages(to));
         messageList.setAdapter(messageListAdapter);
         setTitle(to);
