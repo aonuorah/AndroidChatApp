@@ -45,7 +45,7 @@ public class MessageListAdapter extends BaseAdapter {
         Message message = messages.get(i);
 
         if(_view == null) {
-            if(message.getFrom().equals(App.GetGlobalApp().getConnectionName())) {
+            if(message.getFrom().equals(App.Instance().getConnectionName())) {
                 _view = inflater.inflate(R.layout.message_list_to_row, null);
             }else{
                 _view = inflater.inflate(R.layout.message_list_from_row, null);

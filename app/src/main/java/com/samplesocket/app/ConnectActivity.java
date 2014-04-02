@@ -23,12 +23,12 @@ public class ConnectActivity extends AsyncActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_connect);
-        if(App.GetGlobalApp().isConnected){
+        if(App.Instance().isConnected){
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
             finish();
         }else {
-            App.GetGlobalApp().GetSocketListener(this);
+            App.Instance().socketListener().setContext(this);
         }
     }
 
@@ -56,28 +56,30 @@ public class ConnectActivity extends AsyncActivity {
     public void Connect_click(View button){
         EditText text = (EditText)findViewById(R.id.username);
         String name = text.getText().toString();
-        App.GetGlobalApp().setConnectionName(name);
-        App.GetGlobalApp().GetSocketListener(this).connect(name);
+        App.Instance().setConnectionName(name);
+        App.Instance().socketListener().connect(name);
     }
 
     @Override
     public void progressUpdate(String... progress) {
         try {
             JSONObject response = new JSONObject(progress[0]);
-            if(response.getString("code").equals("200")){
-                App.GetGlobalApp().isConnected = true;
-                if(response.has("online")){
-                    JSONArray onlineUsers = new JSONArray(response.getString("online"));
-                    for(int i = 0; i < onlineUsers.length(); i++){
-                        App.GetGlobalApp().addOnlineUser(new User(onlineUsers.getString(i)));
+            if(response.getString("code").equals("901")){
+                if(response.getString("status").equals("200")) {
+                    App.Instance().isConnected = true;
+                    if (response.has("online")) {
+                        JSONArray onlineUsers = new JSONArray(response.getString("online"));
+                        for (int i = 0; i < onlineUsers.length(); i++) {
+                            App.Instance().addOnlineUser(new User(onlineUsers.getString(i)));
+                        }
                     }
+                    Intent intent = new Intent(this, MainActivity.class);
+                    startActivity(intent);
+                    finish();
+                }else{
+                    TextView textView = (TextView) findViewById(R.id.responseText);
+                    textView.setText(response.getString("status") );
                 }
-                Intent intent = new Intent(this, MainActivity.class);
-                startActivity(intent);
-                finish();
-            }else{
-                TextView textView = (TextView) findViewById(R.id.responseText);
-                textView.setText(response.getString("code") );
             }
         }catch(JSONException ex){
             System.out.println(ex.getMessage());

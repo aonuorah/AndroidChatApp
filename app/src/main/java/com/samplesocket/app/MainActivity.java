@@ -20,11 +20,10 @@ public class MainActivity extends AsyncActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        App.GetGlobalApp().GetSocketListener(this);
 
-        onlineUsersAdapter = new UserListAdapter(this.getLayoutInflater(), App.GetGlobalApp().getOnlineUsers());
+        onlineUsersAdapter = new UserListAdapter(this.getLayoutInflater(), App.Instance().getOnlineUsers());
+
         final Context context = this;
-
         ListView onlineUsersList = (ListView)findViewById(R.id.onlineUsers);
         onlineUsersList.setAdapter(onlineUsersAdapter);
         onlineUsersList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -32,13 +31,17 @@ public class MainActivity extends AsyncActivity {
             public void onItemClick(AdapterView<?> parent, View view, int position,long id) {
 
                 Intent intent = new Intent(context, MessageActivity.class);
-                intent.putExtra("user_id", App.GetGlobalApp().getOnlineUsers().get(position).getName());
+                intent.putExtra("user_id", App.Instance().getOnlineUsers().get(position).getName());
                 startActivity(intent);
             }
         });
     }
 
-
+    @Override
+    public void onResume(){
+        super.onResume();
+        App.Instance().socketListener().setContext(this);//to receive async progress
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -56,13 +59,18 @@ public class MainActivity extends AsyncActivity {
         int id = item.getItemId();
         if (id == R.id.action_settings) {
             return true;
+        }else if (id == R.id.action_logout) {
+            App.Instance().clear();
+            Intent intent = new Intent(this, ConnectActivity.class);
+            startActivity(intent);
+            finish();
         }
         return super.onOptionsItemSelected(item);
     }
 
     @Override
     public void progressUpdate(String... progress) {
-        App.GetGlobalApp().update(progress[0]);
+        App.Instance().update(progress[0]);
         onlineUsersAdapter.notifyDataSetChanged();
     }
 }

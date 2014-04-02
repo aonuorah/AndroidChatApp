@@ -23,20 +23,29 @@ import java.util.Calendar;
 public class MessageActivity extends AsyncActivity {
     private String to;
     private ListView messageList;
+    private EditText newMessage;
     private MessageListAdapter messageListAdapter;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_message);
+
+        newMessage = (EditText)findViewById(R.id.new_message);
+
         Intent intent = getIntent();
         to = intent.getStringExtra("user_id");
 
         messageList = (ListView)findViewById(R.id.messageList);
-        messageListAdapter = new MessageListAdapter(this.getLayoutInflater(), App.GetGlobalApp().getMessages(to));
+        messageListAdapter = new MessageListAdapter(this.getLayoutInflater(), App.Instance().getMessages(to));
         messageList.setAdapter(messageListAdapter);
         setTitle(to);
     }
 
+    @Override
+    public void onResume(){
+        super.onResume();
+        App.Instance().socketListener().setContext(this);//to receive async progress
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -59,22 +68,21 @@ public class MessageActivity extends AsyncActivity {
     }
 
     public void Send_click(View button){
-        EditText text = (EditText)findViewById(R.id.new_message);
-        String message = text.getText().toString();
-        text.setText("");
+        String message = newMessage.getText().toString();
+        newMessage.setText("");
         Calendar calendar = Calendar.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy MMM dd HH:mm:ss");
         String stamp = sdf.format(calendar.getTime());
-        Message _message = new Message(App.GetGlobalApp().getConnectionName(), to, message, stamp);
-        int _id = App.GetGlobalApp().addMessage(to, _message);
+        Message _message = new Message(App.Instance().getConnectionName(), to, message, stamp);
+        int _id = App.Instance().addMessage(to, _message);
         try {
             JSONObject jsonMessage = new JSONObject()
                     .put("id", _id)
                     .put("to", to)
                     .put("message", message)
-                    .put("from",App.GetGlobalApp().getConnectionName())
+                    .put("from",App.Instance().getConnectionName())
                     .put("stamp", stamp);
-            App.GetGlobalApp().GetSocketListener(this).send(jsonMessage.toString());
+            App.Instance().socketListener().send(jsonMessage.toString());
             messageListAdapter.notifyDataSetChanged();
         } catch (IOException ex) {
             System.out.println(ex.getMessage());
@@ -86,7 +94,7 @@ public class MessageActivity extends AsyncActivity {
 
     @Override
     public void progressUpdate(String... progress) {
-        App.GetGlobalApp().update(progress[0]);
+        App.Instance().update(progress[0]);
         messageListAdapter.notifyDataSetChanged();
     }
 }

@@ -17,27 +17,20 @@ public class SocketListener {
     private Context context;
     private AsyncReadSocket asyncSocket;
     private Socket socket;
+    private String server_ip;
+    private int port;
 
-    //private static final String server_ip = "192.168.0.6";
-    private static final String server_ip = "86.11.223.177";
-    private static final int port = 9090;
-
-    public SocketListener(){
-       initAsyncSocket();
+    public SocketListener(String _ip, int _port){
+        server_ip = _ip;
+        port = _port;
+        asyncSocket = new AsyncReadSocket();
+        asyncSocket.execute();
     }
 
     public void setContext(Context _context){
         context = _context;
     }
 
-    private void resetSocket(){
-        initAsyncSocket();
-    }
-
-    private void initAsyncSocket(){
-        asyncSocket = new AsyncReadSocket();
-        asyncSocket.execute();
-    }
 
     public void connect (String name){
         try {
@@ -48,11 +41,10 @@ public class SocketListener {
     }
 
     public void send(String message)throws IOException {
-        if (socket == null) {
-            System.out.println("No socket connection to server");
-            resetSocket();
-        } else if (socket.isClosed()) {
-            resetSocket();
+        if (socket == null || socket.isClosed()) {
+            Log.d("", "No socket connection to server " + asyncSocket.getStatus());
+            //ToDo create a global to check when there is a connection to server
+            //asyncSocket.execute();
         } else{
             PrintWriter writer = new PrintWriter(socket.getOutputStream());
             writer.println(message + "\r\n");
@@ -60,13 +52,24 @@ public class SocketListener {
         }
     }
 
+    public void closeSocket(){
+        try {
+            socket.close();
+        }catch(IOException ex){
+            System.out.println(ex.getMessage());
+        }
+    }
+
 
     public class AsyncReadSocket extends AsyncTask<String, String, Void> {
         int connect_retries;
+        private boolean isRunning;
+
 
         @Override
         protected Void doInBackground(String... params) {
             try {
+                isRunning = true;
                 startListener();
             } catch (IOException ex) {
                 Log.d("ServerListenerException: ", ex.getMessage());
@@ -76,13 +79,16 @@ public class SocketListener {
 
         @Override
         protected void onProgressUpdate(String... progress) {
-            ((AsyncActivity)context).progressUpdate(progress);
+            if(context != null) {
+                ((AsyncActivity) context).progressUpdate(progress);
+            }
             super.onProgressUpdate(progress);
         }
 
+
         private void startListener() throws IOException {
             connect_retries = 0;
-            while(true) {
+            while(isRunning) {
                 try {
                     if (socket == null || socket.isClosed())
                         socket = new Socket(server_ip, port);
@@ -98,13 +104,11 @@ public class SocketListener {
                         }
                     }
                     socket.close();
-                    App.GetGlobalApp().isConnected = false;
+                    App.Instance().isConnected = false;
 
-                } catch (IOException ex) {
+                } catch (IOException ex) {//ToDo checkout timeout
                     Log.d("SocketException: ", ex.getMessage());
-                    connect_retries++;
-                    if(connect_retries > 0)
-                        break;
+                    isRunning = false;
                 }
             }
         }

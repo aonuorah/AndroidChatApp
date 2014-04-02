@@ -1,7 +1,5 @@
 package com.samplesocket.classes;
 
-import android.content.Context;
-
 import com.samplesocket.models.Message;
 import com.samplesocket.models.User;
 
@@ -14,7 +12,10 @@ import java.util.HashMap;
 /**
  * Created by nedu on 3/31/14.
  */
-public class App {
+public class App{
+    private static final String server_ip = "192.168.0.6";
+    //private static final String server_ip = "86.11.223.177";
+    private static final int port = 9090;
     private static App app;
 
     private ArrayList<User> onlineUsers;
@@ -29,18 +30,23 @@ public class App {
         messages = new HashMap<String, ArrayList<Message>>();
     }
 
-    public static App GetGlobalApp(){
+
+    public static App Instance(){
         if(app == null){
             app = new App();
         }
         return app;
     }
 
-    public SocketListener GetSocketListener(Context _context){
+    public void clear(){
+        socketListener.closeSocket();
+        app = null;
+    }
+
+    public SocketListener socketListener(){
         if(socketListener == null){
-           socketListener = new SocketListener();
+           socketListener = new SocketListener(server_ip, port);
         }
-        socketListener.setContext(_context);
         return socketListener;
     }
 

@@ -25,7 +25,9 @@
         </activity>
         <activity
             android:name="com.samplesocket.app.MessageActivity"
-            android:label="@string/title_activity_message" >
+            android:label="@string/title_activity_message"
+            android:windowSoftInputMode="stateUnchanged" >
+            <!-- windowSoftInputMode prevents editText in MessageActivity from getting focus on create -->
         </activity>
     </application>
 
