@@ -17,38 +17,39 @@ public class SocketListener {
     private Context context;
     private AsyncReadSocket asyncSocket;
     private Socket socket;
+    private BufferedReader reader;
     private String server_ip;
     private int port;
 
     public SocketListener(String _ip, int _port){
         server_ip = _ip;
         port = _port;
-        asyncSocket = new AsyncReadSocket();
-        asyncSocket.execute();
     }
+
 
     public void setContext(Context _context){
         context = _context;
     }
 
 
-    public void connect (String name){
-        try {
-            send("connect " + name);
-        }catch(IOException ex){
-            System.out.println(ex.getMessage());
-        }
+    public void connect (){
+        asyncSocket = new AsyncReadSocket();
+        asyncSocket.execute();
     }
 
-    public void send(String message)throws IOException {
-        if (socket == null || socket.isClosed()) {
-            Log.d("", "No socket connection to server " + asyncSocket.getStatus());
-            //ToDo create a global to check when there is a connection to server
-            //asyncSocket.execute();
-        } else{
-            PrintWriter writer = new PrintWriter(socket.getOutputStream());
-            writer.println(message + "\r\n");
-            writer.flush();
+    public void send(String message){
+        try {
+            if (socket == null || socket.isClosed()) {
+                Log.d("", "No socket connection to server " + asyncSocket.getStatus());
+                //ToDo create a global to check when there is a connection to server
+                //asyncSocket.execute();
+            } else {
+                PrintWriter writer = new PrintWriter(socket.getOutputStream());
+                writer.println(message + "\r\n");
+                writer.flush();
+            }
+        }catch(IOException ex){
+            Log.d(App.DEBUG,ex.getMessage());
         }
     }
 
@@ -56,13 +57,12 @@ public class SocketListener {
         try {
             socket.close();
         }catch(IOException ex){
-            System.out.println(ex.getMessage());
+            Log.d(App.DEBUG, ex.getMessage());
         }
     }
 
 
     public class AsyncReadSocket extends AsyncTask<String, String, Void> {
-        int connect_retries;
         private boolean isRunning;
 
 
@@ -87,28 +87,32 @@ public class SocketListener {
 
 
         private void startListener() throws IOException {
-            connect_retries = 0;
             while(isRunning) {
                 try {
-                    if (socket == null || socket.isClosed())
-                        socket = new Socket(server_ip, port);
-
+                    socket = new Socket(server_ip, port);
+                    reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                    publishProgress("{'code':'2', 'status':'200'}");
                     String line;
-                    BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                     String response = "";
-                    while ((line = reader.readLine()) != null) {
-                        response += line;
-                        if (!reader.ready()) {
-                            publishProgress(response);
-                            response = "";
+                    try {
+                        while ((line = reader.readLine()) != null) {
+                            response += line;
+                            if (!reader.ready()) {
+                                publishProgress(response);
+                                response = "";
+                            }
                         }
+                    }catch(IOException ex){
+                        publishProgress("{'code':'2', 'status':'410'}");
+                    }finally{
+                        reader.close();
+                        socket.close();
+                        isRunning = false;
+                        App.Instance().isConnected = false;
                     }
-                    socket.close();
-                    App.Instance().isConnected = false;
-
                 } catch (IOException ex) {//ToDo checkout timeout
-                    Log.d("SocketException: ", ex.getMessage());
-                    isRunning = false;
+                    Log.d(App.DEBUG, ex.getMessage());
+                    publishProgress("{'code':'2', 'status':'404'}");
                 }
             }
         }

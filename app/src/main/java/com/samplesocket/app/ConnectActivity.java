@@ -2,6 +2,7 @@ package com.samplesocket.app;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,6 +19,7 @@ import org.json.JSONObject;
 
 
 public class ConnectActivity extends AsyncActivity {
+    TextView textView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,6 +31,7 @@ public class ConnectActivity extends AsyncActivity {
             finish();
         }else {
             App.Instance().socketListener().setContext(this);
+            textView = (TextView) findViewById(R.id.responseText);
         }
     }
 
@@ -57,14 +60,20 @@ public class ConnectActivity extends AsyncActivity {
         EditText text = (EditText)findViewById(R.id.username);
         String name = text.getText().toString();
         App.Instance().setConnectionName(name);
-        App.Instance().socketListener().connect(name);
+        App.Instance().socketListener().connect();
     }
 
     @Override
     public void progressUpdate(String... progress) {
         try {
             JSONObject response = new JSONObject(progress[0]);
-            if(response.getString("code").equals("901")){
+            if(response.getString("code").equals("2")){
+                if(response.getString("status").equals("200")) {
+                    App.Instance().socketListener().send("connect " + App.Instance().getConnectionName());
+                }else{
+                    throw new Exception(response.getString("status"));
+                }
+            }else if(response.getString("code").equals("901")){
                 if(response.getString("status").equals("200")) {
                     App.Instance().isConnected = true;
                     if (response.has("online")) {
@@ -77,12 +86,13 @@ public class ConnectActivity extends AsyncActivity {
                     startActivity(intent);
                     finish();
                 }else{
-                    TextView textView = (TextView) findViewById(R.id.responseText);
-                    textView.setText(response.getString("status") );
+                    throw new Exception(response.getString("status"));
                 }
             }
         }catch(JSONException ex){
-            System.out.println(ex.getMessage());
+            Log.d(App.DEBUG, ex.getMessage());
+        }catch(Exception ex){
+            textView.setText(ex.getMessage() );
         }
 
     }

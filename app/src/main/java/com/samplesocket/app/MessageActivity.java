@@ -16,7 +16,6 @@ import com.samplesocket.models.Message;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
@@ -84,8 +83,6 @@ public class MessageActivity extends AsyncActivity {
                     .put("stamp", stamp);
             App.Instance().socketListener().send(jsonMessage.toString());
             messageListAdapter.notifyDataSetChanged();
-        } catch (IOException ex) {
-            System.out.println(ex.getMessage());
         } catch(JSONException ex){
             System.out.println(ex.getMessage());
         }

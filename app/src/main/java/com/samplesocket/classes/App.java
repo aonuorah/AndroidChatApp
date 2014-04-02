@@ -1,5 +1,7 @@
 package com.samplesocket.classes;
 
+import android.util.Log;
+
 import com.samplesocket.models.Message;
 import com.samplesocket.models.User;
 
@@ -13,10 +15,11 @@ import java.util.HashMap;
  * Created by nedu on 3/31/14.
  */
 public class App{
-    private static final String server_ip = "192.168.0.6";
-    //private static final String server_ip = "86.11.223.177";
+    //private static final String server_ip = "192.168.0.6";
+    private static final String server_ip = "86.11.223.177";
     private static final int port = 9090;
     private static App app;
+    public static final String DEBUG = "App log";
 
     private ArrayList<User> onlineUsers;
     private HashMap<String, ArrayList<Message>> messages;
@@ -39,8 +42,9 @@ public class App{
     }
 
     public void clear(){
-        socketListener.closeSocket();
-        app = null;
+        //socketListener.closeSocket();
+        app.isConnected = false;
+        //app = null;
     }
 
     public SocketListener socketListener(){
@@ -114,9 +118,11 @@ public class App{
             }else if(response_code.equals("905")){
                 this.removeOnlineUser(response.getString("id"));
 
+            }else if(response_code.equals("909")){
+                this.socketListener().send("{'code':'909'}");
             }
         }catch(JSONException ex){
-            System.out.println(ex.getMessage());
+            Log.d(DEBUG, ex.getMessage());
         }
     }
 
