@@ -29,8 +29,7 @@ public class App{
     public SocketListener socketListener;
 
     private App(){
-        onlineUsers = new ArrayList<User>();
-        messages = new HashMap<String, ArrayList<Message>>();
+        init();
     }
 
 
@@ -41,10 +40,14 @@ public class App{
         return app;
     }
 
-    public void clear(){
-        //socketListener.closeSocket();
-        app.isConnected = false;
-        //app = null;
+    public void logout(){
+        socketListener.closeSocket();
+    }
+
+    public void init(){
+        isConnected = false;
+        onlineUsers = new ArrayList<User>();
+        messages = new HashMap<String, ArrayList<Message>>();
     }
 
     public SocketListener socketListener(){
@@ -98,28 +101,33 @@ public class App{
     public void update(String socketResponse){
         try {
             JSONObject response = new JSONObject(socketResponse);
-            String response_code = response.getString("code");
+            String response_code = response.getString(Server.Keys.CODE);
 
-            if(response_code.equals("902")){
-                String _from = response.getString("from");
-                String _stamp = response.getString("stamp");
-                String _mes = response.getString("message");
+            if(response_code.equals(Server.ResponseCodes.NEW_MESSAGE)){//new message received
+                String _from = response.getString(Server.Keys.FROM);
+                String _stamp = response.getString(Server.Keys.TIMESTAMP);
+                String _mes = response.getString(Server.Keys.MESSAGE);
+                String _reqID = response.getString(Server.Keys.REQUEST_ID);
                 Message _message = new Message(_from, getConnectionName(), _mes, _stamp);
                 this.addMessage(_from, _message);
+                this.socketListener().send(new JSONObject().put(Server.Keys.REQUEST_ID, _reqID)
+                                                            .put(Server.Keys.STATUS, Server.StatusCodes.SUCCESS)
+                                                            .toString());
 
-            }else if(response_code.equals("903")){
-                int _id = Integer.valueOf(response.getString("id"));
-                String _to = response.getString("to");
+
+            }else if(response_code.equals(Server.ResponseCodes.SENT_MESSAGE_UPDATE)){//update on sent message received
+                int _id = Integer.valueOf(response.getString(Server.Keys.ID));
+                String _to = response.getString(Server.Keys.TO);
                 this.getMessages(_to).get(_id).setDelivered();
 
-            }else if(response_code.equals("904")){
-                this.addOnlineUser(new User(response.getString("id")));
+            }else if(response_code.equals(Server.ResponseCodes.USER_UPDATE_ONLINE)){//new user just came online
+                this.addOnlineUser(new User(response.getString(Server.Keys.NAME)));
 
-            }else if(response_code.equals("905")){
-                this.removeOnlineUser(response.getString("id"));
+            }else if(response_code.equals(Server.ResponseCodes.USER_UPDATE_OFFLINE)){//a user just went offline
+                this.removeOnlineUser(response.getString(Server.Keys.NAME));
 
-            }else if(response_code.equals("909")){
-                this.socketListener().send("{'code':'909'}");
+            }else if(response_code.equals(Server.ResponseCodes.IS_ALIVE)){//is alive request from server
+                this.socketListener().send(response.put(Server.Keys.STATUS, Server.StatusCodes.SUCCESS).toString());
             }
         }catch(JSONException ex){
             Log.d(DEBUG, ex.getMessage());

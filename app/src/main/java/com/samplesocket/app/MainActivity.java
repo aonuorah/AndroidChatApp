@@ -41,6 +41,7 @@ public class MainActivity extends AsyncActivity {
     public void onResume(){
         super.onResume();
         App.Instance().socketListener().setContext(this);//to receive async progress
+        onlineUsersAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -60,7 +61,7 @@ public class MainActivity extends AsyncActivity {
         if (id == R.id.action_settings) {
             return true;
         }else if (id == R.id.action_logout) {
-            App.Instance().clear();
+            App.Instance().logout();
             Intent intent = new Intent(this, ConnectActivity.class);
             startActivity(intent);
             finish();

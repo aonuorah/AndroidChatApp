@@ -44,9 +44,8 @@ public class SocketListener {
                 //ToDo create a global to check when there is a connection to server
                 //asyncSocket.execute();
             } else {
-                PrintWriter writer = new PrintWriter(socket.getOutputStream());
-                writer.println(message + "\r\n");
-                writer.flush();
+                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
+                writer.println(message);
             }
         }catch(IOException ex){
             Log.d(App.DEBUG,ex.getMessage());
@@ -91,7 +90,7 @@ public class SocketListener {
                 try {
                     socket = new Socket(server_ip, port);
                     reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-                    publishProgress("{'code':'2', 'status':'200'}");
+                    publishProgress("{'"+Server.Keys.CODE+"':'"+Server.RequestCodes.CONNECT+"', '"+Server.Keys.STATUS+"':'"+Server.StatusCodes.SUCCESS+"'}");
                     String line;
                     String response = "";
                     try {
@@ -102,17 +101,18 @@ public class SocketListener {
                                 response = "";
                             }
                         }
-                    }catch(IOException ex){
-                        publishProgress("{'code':'2', 'status':'410'}");
                     }finally{
                         reader.close();
                         socket.close();
-                        isRunning = false;
-                        App.Instance().isConnected = false;
+                        publishProgress("{'"+Server.Keys.CODE+"':'"+Server.RequestCodes.CONNECT+"', '"+Server.Keys.STATUS+"':'"+Server.StatusCodes.GONE+"'}");
                     }
-                } catch (IOException ex) {//ToDo checkout timeout
-                    Log.d(App.DEBUG, ex.getMessage());
-                    publishProgress("{'code':'2', 'status':'404'}");
+                } finally{
+                    isRunning = false;
+                    App.Instance().init();
+                    if(socket == null) {
+                        publishProgress("{'" + Server.Keys.CODE + "':'" + Server.RequestCodes.CONNECT + "', '" + Server.Keys.STATUS + "':'" + Server.StatusCodes.NOT_FOUND + "'}");
+                    }
+
                 }
             }
         }

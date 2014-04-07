@@ -11,6 +11,7 @@ import android.widget.ListView;
 import com.samplesocket.adapters.MessageListAdapter;
 import com.samplesocket.classes.App;
 import com.samplesocket.classes.AsyncActivity;
+import com.samplesocket.classes.Server;
 import com.samplesocket.models.Message;
 
 import org.json.JSONException;
@@ -44,6 +45,7 @@ public class MessageActivity extends AsyncActivity {
     public void onResume(){
         super.onResume();
         App.Instance().socketListener().setContext(this);//to receive async progress
+        messageListAdapter.notifyDataSetChanged();
     }
 
     @Override
@@ -76,11 +78,12 @@ public class MessageActivity extends AsyncActivity {
         int _id = App.Instance().addMessage(to, _message);
         try {
             JSONObject jsonMessage = new JSONObject()
-                    .put("id", _id)
-                    .put("to", to)
-                    .put("message", message)
-                    .put("from",App.Instance().getConnectionName())
-                    .put("stamp", stamp);
+                    .put(Server.Keys.CODE, Server.RequestCodes.SEND_MESSAGE)
+                    .put(Server.Keys.ID, String.valueOf(_id))
+                    .put(Server.Keys.TO, to)
+                    .put(Server.Keys.MESSAGE, message)
+                    //.put(Server.Keys.FROM, App.Instance().getConnectionName())
+                    .put(Server.Keys.TIMESTAMP, stamp);
             App.Instance().socketListener().send(jsonMessage.toString());
             messageListAdapter.notifyDataSetChanged();
         } catch(JSONException ex){

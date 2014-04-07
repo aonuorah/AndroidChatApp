@@ -11,6 +11,7 @@ import android.widget.TextView;
 
 import com.samplesocket.classes.App;
 import com.samplesocket.classes.AsyncActivity;
+import com.samplesocket.classes.Server;
 import com.samplesocket.models.User;
 
 import org.json.JSONArray;
@@ -67,17 +68,13 @@ public class ConnectActivity extends AsyncActivity {
     public void progressUpdate(String... progress) {
         try {
             JSONObject response = new JSONObject(progress[0]);
-            if(response.getString("code").equals("2")){
-                if(response.getString("status").equals("200")) {
-                    App.Instance().socketListener().send("connect " + App.Instance().getConnectionName());
-                }else{
-                    throw new Exception(response.getString("status"));
-                }
-            }else if(response.getString("code").equals("901")){
-                if(response.getString("status").equals("200")) {
+            if(response.getString(Server.Keys.CODE).equals(Server.RequestCodes.CONNECT)){
+                if(response.getString(Server.Keys.STATUS).equals(Server.StatusCodes.SUCCESS)) {
+                    App.Instance().socketListener().send(Server.ConnectionRequest(App.Instance().getConnectionName()).toString());
+                }else if(response.getString(Server.Keys.STATUS).equals(Server.StatusCodes.ACCEPTED)) {
                     App.Instance().isConnected = true;
-                    if (response.has("online")) {
-                        JSONArray onlineUsers = new JSONArray(response.getString("online"));
+                    if (response.has(Server.Keys.ONLINE)) {
+                        JSONArray onlineUsers = new JSONArray(response.getString(Server.Keys.ONLINE));
                         for (int i = 0; i < onlineUsers.length(); i++) {
                             App.Instance().addOnlineUser(new User(onlineUsers.getString(i)));
                         }
@@ -86,7 +83,7 @@ public class ConnectActivity extends AsyncActivity {
                     startActivity(intent);
                     finish();
                 }else{
-                    throw new Exception(response.getString("status"));
+                    throw new Exception(response.getString(Server.Keys.STATUS));
                 }
             }
         }catch(JSONException ex){
